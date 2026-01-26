@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Registro de Glicemia</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body class="bg-light">
+  <div class="container mt-5">
+    <h2>🩸 Registro de Glicemia - {{ date.today().strftime('%d/%m/%Y') }}</h2>
+
+    {% if ultima %}
+    <div class="card mb-4">
+      <div class="card-header">Última medição ({{ ultima[1] }})</div>
+      <div class="card-body">
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item">Jejum: {{ ultima[2] or '-' }}</li>
+          <li class="list-group-item">2h Após Café: {{ ultima[3] or '-' }}</li>
+          <li class="list-group-item">Antes do Almoço: {{ ultima[4] or '-' }}</li>
+          <li class="list-group-item">2h Após Almoço: {{ ultima[5] or '-' }}</li>
+          <li class="list-group-item">Antes do Jantar: {{ ultima[6] or '-' }}</li>
+          <li class="list-group-item">2h Após Jantar: {{ ultima[7] or '-' }}</li>
+          <li class="list-group-item">Antes de Dormir: {{ ultima[8] or '-' }}</li>
+          <li class="list-group-item">Medição Extra (3h): {{ ultima[9] or '-' }}</li>
+        </ul>
+      </div>
+    </div>
+    {% endif %}
+
+    <form method="POST">
+      {{ form.hidden_tag() }}
+
+      <div class="mb-3">
+        {{ form.periodo.label(class="form-label") }}
+        {{ form.periodo(class="form-select") }}
+      </div>
+
+      <div class="mb-3">
+        {{ form.valor.label(class="form-label") }}
+        {{ form.valor(class="form-control") }}
+      </div>
+
+      {{ form.submit(class="btn btn-primary") }}
+    </form>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="mt-3">
+          {% for category, msg in messages %}
+            <div class="alert alert-{{ category }}">{{ msg }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+  </div>
+</body>
+</html>
