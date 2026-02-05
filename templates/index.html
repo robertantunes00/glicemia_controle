@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Controle de Glicemia</title>
+    <style>
+        body { font-family: Arial, sans-serif; display: flex; justify-content: center; margin-top: 50px; text-align: center; }
+        .container { width: 300px; }
+        .input-box { width: 100%; padding: 12px; margin: 10px 0; border: 2px solid black; box-sizing: border-box; font-size: 16px; }
+        .btn-enviar { padding: 10px 30px; border: 2px solid black; background: white; cursor: pointer; font-weight: bold; }
+        .ultima-medicao { margin-top: 50px; }
+        .valor-mg { font-size: 20px; margin-top: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Glicemia Controle</h2>
+
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            
+            {{ form.valor(class="input-box", placeholder="Insira o valor") }}
+
+            <p>Selecione o periodo</p>
+            {{ form.periodo(class="input-box") }}
+
+            <div style="margin-top: 20px;">
+                {{ form.submit(class="btn-enviar") }}
+            </div>
+        </form>
+
+        <div class="ultima-medicao">
+            <p>Ultima medição</p>
+            <div class="valor-mg"><strong>{{ valor_exibicao }} mg</strong></div>
+        </div>
+    </div>
+</body>
+</html>

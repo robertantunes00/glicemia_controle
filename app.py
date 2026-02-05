@@ -4,71 +4,59 @@ import mysql.connector
 from datetime import date
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'sua_chave_secreta'
+app.config['SECRET_KEY'] = 'o1c9r2r401'
 
-# Configurações MySQL
 DB_CONFIG = {
     'host': 'localhost',
     'user': 'root',
     'password': '192401',
-    'database': 'dados2'
+    'database': 'medicaldata'
 }
 
-# Inicializa tabela caso não exista
-def init_db():
-    conn = mysql.connector.connect(**DB_CONFIG)
-    c = conn.cursor()
-    c.execute("""
-    CREATE TABLE IF NOT EXISTS glicemia (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        data DATE UNIQUE,
-        jejum INT,
-        `2_horas_apos_cafe` INT,
-        antes_do_almoco INT,
-        `2_horas_apos_almoco` INT,
-        antes_do_jantar INT,
-        `2_horas_apos_jantar` INT,
-        antes_de_dormir INT,
-        `3_horas` INT
-    )
-    """)
-    conn.commit()
-    conn.close()
-
-init_db()
+def get_db_connection():
+    return mysql.connector.connect(**DB_CONFIG)
 
 @app.route("/", methods=["GET", "POST"])
 def index():
     form = GlicemiaForm()
-    ultima_medicao = None
-
-    # Busca última medição
-    conn = mysql.connector.connect(**DB_CONFIG)
-    c = conn.cursor()
-    c.execute("SELECT * FROM glicemia ORDER BY data DESC LIMIT 1")
-    ultima_medicao = c.fetchone()
-    conn.close()
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
 
     if form.validate_on_submit():
-        data = date.today().strftime("%Y-%m-%d")  # ignora horário
+        hoje = date.today().strftime("%Y-%m-%d")
         periodo = form.periodo.data
         valor = form.valor.data
 
-        conn = mysql.connector.connect(**DB_CONFIG)
-        c = conn.cursor()
-        c.execute("SELECT id FROM glicemia WHERE data = %s", (data,))
-        registro = c.fetchone()
-
-        if registro:
-            # Atualiza coluna do período
-            c.execute(f"UPDATE glicemia SET `{periodo}` = %s WHERE data = %s", (valor, data))
+        # Lógica de Upsert: Se já existe registro hoje, atualiza. Se não, insere.
+        cursor.execute("SELECT id FROM glicemia WHERE data = %s", (hoje,))
+        if cursor.fetchone():
+            cursor.execute(f"UPDATE glicemia SET `{periodo}` = %s WHERE data = %s", (valor, hoje))
         else:
-            # Insere novo registro
-            c.execute(f"INSERT INTO glicemia (data, `{periodo}`) VALUES (%s, %s)", (data, valor))
-
+            cursor.execute(f"INSERT INTO glicemia (data, `{periodo}`) VALUES (%s, %s)", (hoje, valor))
+        
         conn.commit()
+        flash("Registrado com sucesso!", "success")
         conn.close()
-        flash("Medição registrada com sucesso!", "success")
         return redirect(url_for("index"))
 
-    return render_template("index.html", form=form, ultima=ultima_medicao)
+    # Busca a última linha inserida para mostrar o valor mais recente
+    cursor.execute("SELECT * FROM glicemia ORDER BY data DESC LIMIT 1")
+    ultima_linha = cursor.fetchone()
+    
+    # Extrai o último valor não nulo da linha encontrada
+    valor_exibicao = "xxxx"
+    if ultima_linha:
+        # Colunas em ordem inversa de preferência para mostrar a "última" do dia
+        colunas = ['3_horas', 'antes_de_dormir', '2_horas_apos_jantar', 'antes_do_jantar', 
+                   '2_horas_apos_almoco', 'antes_do_almoco', '2_horas_apos_cafe', 'jejum']
+        for col in colunas:
+            if ultima_linha.get(col):
+                valor_exibicao = ultima_linha[col]
+                break
+
+    conn.close()
+    return render_template("index.html", form=form, valor_exibicao=valor_exibicao)
+
+if __name__ == "__main__":
+    # host='0.0.0.0' faz o Flask aceitar conexões de qualquer aparelho na rede
+    app.run(debug=True, host='0.0.0.0', port=5000)
