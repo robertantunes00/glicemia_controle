@@ -4,7 +4,7 @@ import mysql.connector
 from datetime import date
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'o1c9r2r401'
+app.config['SECRET_KEY'] = ''
 
 DB_CONFIG = {
     'host': 'localhost',
